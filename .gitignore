@@ -1,4 +1,7 @@
 .idea/
 venv/
+dist/
+build\
 *.iml
 *.gcode
+*.spec

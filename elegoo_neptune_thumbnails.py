@@ -118,8 +118,9 @@ class ElegooNeptuneThumbnails:
             g_code: str = file.read()
 
         if ';gimage:' not in g_code and ';simage:' not in g_code:
+            gcode_prefix: str = self._generate_gcode_prefix()
             with open(self._gcode, "w") as file:
-                file.write(self._generate_gcode_prefix() + g_code)
+                file.write(gcode_prefix + g_code)
 
     @classmethod
     def _parse_thumbnail_old(cls, img: QImage, width: int, height: int, img_type: str) -> str:

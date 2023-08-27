@@ -38,8 +38,9 @@ are supported (for other models, see [FAQ](#faq)):
 
 ## Installation
 
-1) Download the post processing script binary for your operating system
-   from [GitHub](https://github.com/Molodos/ElegooNeptuneThumbnails-Prusa/releases/latest)
+1) Download the post processing script binary for Windows
+   from [GitHub](https://github.com/Molodos/ElegooNeptuneThumbnails-Prusa/releases/latest) if you are using another
+   operating system, you have to compile the script yourself as described in [Packaging Guide](#packaging-guide)
 2) Place the binary somewhere on your system and remember the path (
    e.g. `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe`)
 3) Set the thumbnail generation in PrusaSlicer to 600x600
@@ -70,11 +71,18 @@ There seems to be a bug in older printer firmware versions which causes the thum
 right after the last one ended. Restarting the printer in between prints seems to fix that. If this is the case for you,
 check your printer for firmware updates, which might fix the bug.
 
-## Development Guide
+## Packaging Guide
 
 1) Install requirements `pip install -r requirements.txt`
-2) Develop
-3) TODO: Packaging guide
+2) Create binary for your system
+   ```
+   pyinstaller --onefile \ 
+   --add-binary="libs/ColPic_X64.dll;libs" \
+   --add-binary="libs/libColPic.so;libs" \
+   --add-binary="libs/libColPic.dylib;libs" \
+   elegoo_neptune_thumbnails.py
+   ```
+3) Binary is in `dist` folder
 
 ## License
 

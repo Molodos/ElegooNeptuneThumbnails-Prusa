@@ -31,8 +31,10 @@ are supported (for other models, see [FAQ](#faq)):
 > **Note:** If you have some idea on how to improve the post processing script or found a bug, feel free to create
 > a [GitHub issue](https://github.com/Molodos/ElegooNeptuneThumbnails-Prusa/issues/new/choose) for that
 
-<img src="readme_images/neptune_4_preview.jpg" width="300">
-<img src="readme_images/neptune_4_view.jpg" width="300">
+<p float="left">
+   <img src="readme_images/neptune_4_preview.jpg" width="300">
+   <img src="readme_images/neptune_4_view.jpg" width="300">
+</p>
 
 ## Installation
 

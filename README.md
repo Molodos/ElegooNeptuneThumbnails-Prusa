@@ -56,6 +56,14 @@ are supported (for other models, see [FAQ](#faq)):
 Yes, check out the [ElegooNeptuneThumbnails plugin for Cura 5.X](https://github.com/Molodos/ElegooNeptuneThumbnails),
 which is the extended version of this pos processing script.
 
+### I did not use the official Neptune printer preset in PrusaSliceer, what to do?
+
+The script cannot auto-detect your printer when doing so. To manually set the printer model, use the
+parameter `--printer=<printer_model>` after the path of the processing script in the PrusaSlicer settings. It should
+look like `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe --printer=NEPTUNE4PRO`. Allowed values are the following:
+
+NEPTUNE4, NEPTUNE4PRO, NEPTUNE3PRO, NEPTUNE3PLUS, NEPTUNE3MAX, NEPTUNE2, NEPTUNE2S, NEPTUNE2D and NEPTUNEX 
+
 ### Does the "normal" Neptune 3 support this plugin?
 
 The "normal" Neptune 3 doesn't support displaying thumbnails, I have talked with Elegoo as there were many people asking

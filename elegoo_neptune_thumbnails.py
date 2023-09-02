@@ -15,11 +15,18 @@ class ElegooNeptuneThumbnails:
     ElegooNeptuneThumbnails post processing script
     """
 
+    OLD_MODELS: list[str] = ["NEPTUNE2", "NEPTUNE2D", "NEPTUNE2S", "NEPTUNEX"]
+    NEW_MODELS: list[str] = ["NEPTUNE4", "NEPTUNE4PRO", "NEPTUNE3PRO", "NEPTUNE3PLUS", "NEPTUNE3MAX"]
+
     def __init__(self):
         args: Namespace = self._parse_args()
         self._gcode: str = args.gcode
+        self._printer_model: str = args.printer
         self._thumbnail: QImage = self._get_q_image_thumbnail()
-        self._printer_model: str = self._get_printer_model()
+
+        # Find printer model from gcode if not set
+        if not self._printer_model or self._printer_model not in (self.OLD_MODELS + self.NEW_MODELS):
+            self._printer_model = self._get_printer_model()
 
     @classmethod
     def _parse_args(cls) -> Namespace:
@@ -30,8 +37,9 @@ class ElegooNeptuneThumbnails:
         parser = argparse.ArgumentParser(
             prog="ElegooNeptuneThumbnails-Prusa",
             description="A post processing script to add Elegoo Neptune thumbnails to gcode")
-        # parser.add_argument("--w", type=bool, action="store_true", default=False)
-        parser.add_argument("gcode", type=str)
+        parser.add_argument("-p", "--printer", help="Printer model to generate for", type=str, required=False,
+                            default="")
+        parser.add_argument("gcode", help="Gcode path provided by PrusaSlicer", type=str)
         return parser.parse_args()
 
     def _get_base64_thumbnail(self) -> str:
@@ -78,17 +86,23 @@ class ElegooNeptuneThumbnails:
         # If not found, raise exception
         raise Exception("Printer model not found")
 
+    def is_supported_printer(self) -> bool:
+        """
+        Check if printer is supported
+        """
+        return self._is_old_thumbnail() or self._is_new_thumbnail()
+
     def _is_old_thumbnail(self) -> bool:
         """
         Check if an old printer is present
         """
-        return self._printer_model in ["NEPTUNE2", "NEPTUNE2D", "NEPTUNE2S", "NEPTUNEX"]
+        return self._printer_model in self.OLD_MODELS
 
     def _is_new_thumbnail(self) -> bool:
         """
         Check if a new printer is present
         """
-        return self._printer_model in ["NEPTUNE4", "NEPTUNE4PRO", "NEPTUNE3PRO", "NEPTUNE3PLUS", "NEPTUNE3MAX"]
+        return self._printer_model in self.NEW_MODELS
 
     def _generate_gcode_prefix(self) -> str:
         """
@@ -232,4 +246,5 @@ if __name__ == "__main__":
     Init point of the script
     """
     thumbnail_generator: ElegooNeptuneThumbnails = ElegooNeptuneThumbnails()
-    thumbnail_generator.add_thumbnail_prefix()
+    if thumbnail_generator.is_supported_printer():
+        thumbnail_generator.add_thumbnail_prefix()

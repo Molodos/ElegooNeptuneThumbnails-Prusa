@@ -112,7 +112,7 @@ class ElegooNeptuneThumbnails:
         gcode_prefix: str = ""
         if self._is_old_thumbnail():
             gcode_prefix += self._parse_thumbnail_old(self._thumbnail, 160, 160, "simage")
-            gcode_prefix += self._parse_thumbnail_old(self._thumbnail, 200, 200, "gimage")
+            gcode_prefix += self._parse_thumbnail_old(self._thumbnail, 200, 200, ";gimage")
         elif self._is_new_thumbnail():
             gcode_prefix += self._parse_thumbnail_new(self._thumbnail, 200, 200, "gimage")
             gcode_prefix += self._parse_thumbnail_new(self._thumbnail, 160, 160, "simage")
@@ -148,8 +148,6 @@ class ElegooNeptuneThumbnails:
         TODO: Maybe optimize at some time
         """
         img_type = f";{img_type}:"
-        if img_type == "gimage":
-            img_type = f";{img_type}"
         result = ""
         b_image = img.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio)
         img_size = b_image.size()

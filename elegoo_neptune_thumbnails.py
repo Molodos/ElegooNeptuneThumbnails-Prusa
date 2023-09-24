@@ -49,7 +49,7 @@ class ElegooNeptuneThumbnails:
         # Try to find thumbnail
         found: bool = False
         base64_thumbnail: str = ""
-        with open(self._gcode, "r") as file:
+        with open(self._gcode, "r", encoding="utf8") as file:
             for line in file.read().splitlines():
                 if not found and line.startswith("; thumbnail begin 600x600"):
                     found = True
@@ -78,7 +78,7 @@ class ElegooNeptuneThumbnails:
         Read the printer model from gcode file
         """
         # Try to find printer model
-        with open(self._gcode, "r") as file:
+        with open(self._gcode, "r", encoding="utf8") as file:
             for line in file.read().splitlines():
                 if line.startswith("; printer_model = "):
                     return line[len("; printer_model = "):]
@@ -129,7 +129,7 @@ class ElegooNeptuneThumbnails:
         """
         # Get gcode
         g_code: str
-        with open(self._gcode, "r") as file:
+        with open(self._gcode, "r", encoding="utf8") as file:
             g_code: str = file.read()
 
         # Remove mark of PrusaSlicer
@@ -138,7 +138,7 @@ class ElegooNeptuneThumbnails:
         # Add prefix
         if ';gimage:' not in g_code and ';simage:' not in g_code:
             gcode_prefix: str = self._generate_gcode_prefix()
-            with open(self._gcode, "w") as file:
+            with open(self._gcode, "w", encoding="utf8") as file:
                 file.write(gcode_prefix + g_code)
 
     @classmethod

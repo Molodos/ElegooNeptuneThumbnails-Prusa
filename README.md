@@ -92,7 +92,7 @@ check your printer for firmware updates, which might fix the bug.
       ```shell
    pyinstaller --onefile --add-binary="libs/ColPic_X64.dll:libs" --add-binary="libs/libColPic.so:libs" --add-binary="libs/libColPic.dylib:libs" --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
    ```
-4) Binary is in `dist` folder
+3) Binary is in `dist` folder
 
 ## License
 

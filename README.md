@@ -84,7 +84,7 @@ check your printer for firmware updates, which might fix the bug.
 1) Install requirements `pip install -r requirements.txt`
 2) Create binary for your system
    ```shell
-   pyinstaller --onefile --add-binary="libs/ColPic_X64.dll;libs" --add-binary="libs/libColPic.so;libs" --add-binary="libs/libColPic.dylib;libs" --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
+   pyinstaller --onefile --add-binary="libs/ColPic_X64.dll:libs" --add-binary="libs/libColPic.so:libs" --add-binary="libs/libColPic.dylib:libs" --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
    ```
 3) Binary is in `dist` folder
 

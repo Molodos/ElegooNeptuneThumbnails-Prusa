@@ -79,7 +79,7 @@ There seems to be a bug in older printer firmware versions which causes the thum
 right after the last one ended. Restarting the printer in between prints seems to fix that. If this is the case for you,
 check your printer for firmware updates, which might fix the bug.
 
-### Why do I get errors and the Thumbnail does not work on MacOS using an M-Series chip?
+### Why do I get errors and the thumbnail does not work on MacOS using an M-Series chip?
 
 Unfortunately I am dependent of the official Elegoo Cura binaries and as there are no binaries for the MacOS M series
 chips, I am not able to provide support for those.

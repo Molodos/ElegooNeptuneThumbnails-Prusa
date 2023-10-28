@@ -59,7 +59,8 @@ class ElegooNeptuneThumbnails:
                     base64_thumbnail += line[2:]
 
         # If not found, raise exception
-        raise Exception("Thumbnail is not present")
+        raise Exception(
+            "Correct size thumbnail is not present: Make sure, that your slicer generates a thumbnail with size 600x600")
 
     def _get_q_image_thumbnail(self) -> QImage:
         """

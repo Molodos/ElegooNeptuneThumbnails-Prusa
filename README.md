@@ -20,6 +20,8 @@ are supported (for other models, see [FAQ](#faq)):
 
 - Elegoo Neptune 4
 - Elegoo Neptune 4 Pro
+- Elegoo Neptune 4 Plus
+- Elegoo Neptune 4 Max
 - Elegoo Neptune 3 Pro
 - Elegoo Neptune 3 Plus
 - Elegoo Neptune 3 Max
@@ -62,7 +64,7 @@ The script cannot auto-detect your printer when doing so. To manually set the pr
 parameter `--printer=<printer_model>` after the path of the processing script in the PrusaSlicer settings. It should
 look like `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe --printer=NEPTUNE4PRO`. Allowed values are the following:
 
-NEPTUNE4, NEPTUNE4PRO, NEPTUNE3PRO, NEPTUNE3PLUS, NEPTUNE3MAX, NEPTUNE2, NEPTUNE2S, NEPTUNE2D and NEPTUNEX 
+NEPTUNE4, NEPTUNE4PRO, NEPTUNE4PLUS, NEPTUNE4MAX, NEPTUNE3PRO, NEPTUNE3PLUS, NEPTUNE3MAX, NEPTUNE2, NEPTUNE2S, NEPTUNE2D and NEPTUNEX 
 
 ### Does the "normal" Neptune 3 support this plugin?
 

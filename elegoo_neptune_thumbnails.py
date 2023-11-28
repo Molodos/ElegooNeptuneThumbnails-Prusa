@@ -16,7 +16,8 @@ class ElegooNeptuneThumbnails:
     """
 
     OLD_MODELS: list[str] = ["NEPTUNE2", "NEPTUNE2D", "NEPTUNE2S", "NEPTUNEX"]
-    NEW_MODELS: list[str] = ["NEPTUNE4", "NEPTUNE4PRO", "NEPTUNE3PRO", "NEPTUNE3PLUS", "NEPTUNE3MAX"]
+    NEW_MODELS: list[str] = ["NEPTUNE4", "NEPTUNE4PRO", "NEPTUNE4PLUS", "NEPTUNE4MAX",
+                             "NEPTUNE3PRO", "NEPTUNE3PLUS", "NEPTUNE3MAX"]
 
     def __init__(self):
         args: Namespace = self._parse_args()

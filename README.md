@@ -88,6 +88,18 @@ chips, I am not able to provide support for those.
 
 ## Packaging Guide
 
+### For Macs with M-series chips
+If you have an arm64 mac, you will need to build an executable inside of a x86_64 python environment. The easiest way is with [miniconda](https://formulae.brew.sh/cask/miniconda):
+```
+conda create -p ./my_x86_env -y
+conda activate ./my_x86_env
+conda config --env --set subdir osx-64
+conda install python=3.11 -y
+```
+Then, follow the steps for other systems.
+
+### Other systems
+
 1) Install requirements `pip install -r requirements.txt`
 2) Create binary for your system
    

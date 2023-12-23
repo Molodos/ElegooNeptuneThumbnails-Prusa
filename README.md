@@ -6,7 +6,7 @@
 
 If you like this post processing script, consider supporting me :)
 
-[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=molodos&button_colour=5F7FFF&font_colour=ffffff&font_family=Comic&outline_colour=000000&coffee_colour=FFDD00&id=3)](https://www.buymeacoffee.com/molodos)
+[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=molodos&button_colour=5F7FFF&font_colour=ffffff&font_family=Comic&outline_colour=000000&coffee_colour=FFDD00&id=5)](https://www.buymeacoffee.com/molodos)
 
 ## General Info
 
@@ -93,11 +93,11 @@ chips, I am not able to provide support for those.
    
    Windows:
    ```shell
-   pyinstaller --onefile --add-binary="libs/ColPic_X64.dll;libs" --add-binary="libs/libColPic.so;libs" --add-binary="libs/libColPic.dylib;libs" --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
+   pyinstaller --onefile --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
    ```
    Mac/Linux:
       ```shell
-   pyinstaller --onefile --add-binary="libs/ColPic_X64.dll:libs" --add-binary="libs/libColPic.so:libs" --add-binary="libs/libColPic.dylib:libs" --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
+   pyinstaller --onefile --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
    ```
 3) Binary is in `dist` folder
 

@@ -1,3 +1,6 @@
+# Copyright (c) 2023 Molodos
+# The ElegooNeptuneThumbnails plugin is released under the terms of the AGPLv3 or higher.
+
 import argparse
 import base64
 import platform
@@ -8,6 +11,8 @@ from os import path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage
+
+import lib_col_pic
 
 
 class ElegooNeptuneThumbnails:
@@ -190,13 +195,6 @@ class ElegooNeptuneThumbnails:
         TODO: Maybe optimize at some time
         """
         img_type = f";{img_type}:"
-        sys: str = platform.system().lower()
-        if "darwin" in sys:
-            p_dll = CDLL(path.join(path.dirname(__file__), "libs", "libColPic.dylib"))
-        elif "linux" in sys:
-            p_dll = CDLL(path.join(path.dirname(__file__), "libs", "libColPic.so"))
-        else:
-            p_dll = CDLL(path.join(path.dirname(__file__), "libs", "ColPic_X64.dll"))
 
         result = ""
         b_image = img.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio)
@@ -211,30 +209,29 @@ class ElegooNeptuneThumbnails:
                     b = pixel_color.blue() >> 3
                     rgb = (r << 11) | (g << 5) | b
                     color16.append(rgb)
-
-            # int ColPic_EncodeStr(U16* fromcolor16, int picw, int pich, U8* outputdata, int outputmaxtsize, int colorsmax);
-            from_color16 = color16.tobytes()
-            output_data = array('B', [0] * img_size.height() * img_size.width()).tobytes()
-            result_int = p_dll.ColPic_EncodeStr(from_color16, img_size.height(), img_size.width(), output_data,
-                                                img_size.height() * img_size.width(), 1024)
+            output_data = bytearray(img_size.height() * img_size.width() * 10)
+            result_int = lib_col_pic.ColPic_EncodeStr(color16, img_size.height(), img_size.width(), output_data,
+                                                      img_size.height() * img_size.width() * 10, 1024)
 
             data0 = str(output_data).replace('\\x00', '')
             data1 = data0[2:len(data0) - 2]
             each_max = 1024 - 8 - 1
             max_line = int(len(data1) / each_max)
-            append_len = each_max - 3 - int(len(data1) % each_max)
-
-            for i in range(len(data1)):
-                if i == max_line * each_max:
-                    result += '\r;' + img_type + data1[i]
-                elif i == 0:
-                    result += img_type + data1[i]
-                elif i % each_max == 0:
-                    result += '\r' + img_type + data1[i]
-                else:
-                    result += data1[i]
+            append_len = each_max - 3 - int(len(data1) % each_max) + 10
+            j = 0
+            for i in range(len(output_data)):
+                if output_data[i] != 0:
+                    if j == max_line * each_max:
+                        result += '\r;' + img_type + chr(output_data[i])
+                    elif j == 0:
+                        result += img_type + chr(output_data[i])
+                    elif j % each_max == 0:
+                        result += '\r' + img_type + chr(output_data[i])
+                    else:
+                        result += chr(output_data[i])
+                    j += 1
             result += '\r;'
-            for j in range(append_len):
+            for m in range(append_len):
                 result += '0'
 
         except Exception as e:

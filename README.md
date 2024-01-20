@@ -107,14 +107,8 @@ Then, follow the steps for other systems.
 ### Other systems
 
 1) Install requirements `pip install -r requirements.txt`
-2) Create binary for your system
-
-   Windows:
+2) Create binary for your system:
    ```shell
-   pyinstaller --onefile --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
-   ```
-   Mac/Linux:
-      ```shell
    pyinstaller --onefile --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
    ```
 3) Binary is in `dist` folder

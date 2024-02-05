@@ -41,12 +41,12 @@ are supported (for other models, see [FAQ](#faq)):
 
 ## Installation
 
-1) Download the post processing script binary for Windows
+1) Download the post-processing script binary for Windows
    from [GitHub](https://github.com/Molodos/ElegooNeptuneThumbnails-Prusa/releases/latest) if you are using another
    operating system, you have to compile the script yourself as described in [Packaging Guide](#packaging-guide)
 2) Place the binary somewhere on your system and remember the path (
    e.g. `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe`)
-3) Set the thumbnail generation in PrusaSlicer to 600x600
+3) Set the thumbnail generation in PrusaSlicer to at least 300x300 (600x600 is optimal)
    PNG <img src="readme_images/prusaslicer_set_thumbnail.png" width="600">
 4) Configure the path to the post-processing script binary in
    PrusaSlicer <img src="readme_images/prusaslicer_add_script.png" width="600">

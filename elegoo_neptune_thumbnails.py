@@ -47,7 +47,7 @@ class ElegooNeptuneThumbnails:
         parser.add_argument("gcode", help="Gcode path provided by PrusaSlicer", type=str)
         return parser.parse_args()
 
-    def _get_base64_thumbnail(self) -> str:
+    def _get_base64_thumbnail(self, min_size: int = 300) -> str:
         """
         Read the base64 encoded thumbnail from gcode file
         """
@@ -56,8 +56,11 @@ class ElegooNeptuneThumbnails:
         base64_thumbnail: str = ""
         with open(self._gcode, "r", encoding="utf8") as file:
             for line in file.read().splitlines():
-                if not found and line.startswith("; thumbnail begin 600x600"):
-                    found = True
+                if not found and line.startswith("; thumbnail begin "):
+                    parts = line.split(" ")
+                    width, height = map(int, parts[3].split("x"))
+                    if width >= min_size and height >= min_size:
+                        found = True
                 elif found and line == "; thumbnail end":
                     return base64_thumbnail
                 elif found:
@@ -65,18 +68,19 @@ class ElegooNeptuneThumbnails:
 
         # If not found, raise exception
         raise Exception(
-            "Correct size thumbnail is not present: Make sure, that your slicer generates a thumbnail with size 600x600")
+            f"Correct size thumbnail is not present: Make sure, that your slicer generates a thumbnail with a size of at least {min_size}x{min_size}")
 
     def _get_q_image_thumbnail(self) -> QImage:
         """
         Read the base64 encoded thumbnail from gcode file and parse it to a QImage object
         """
         # Read thumbnail
-        base64_thumbnail: str = self._get_base64_thumbnail()
+        base64_thumbnail: str = self._get_base64_thumbnail(min_size=300)
 
         # Parse thumbnail
         thumbnail = QImage()
         thumbnail.loadFromData(base64.decodebytes(bytes(base64_thumbnail, "UTF-8")), "PNG")
+        thumbnail = thumbnail.scaled(600, 600, Qt.AspectRatioMode.KeepAspectRatio)
         return thumbnail
 
     def _get_printer_model(self) -> str:

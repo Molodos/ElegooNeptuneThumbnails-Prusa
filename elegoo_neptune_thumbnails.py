@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2023 Molodos
 # The ElegooNeptuneThumbnails plugin is released under the terms of the AGPLv3 or higher.
 
@@ -6,11 +7,9 @@ import base64
 import platform
 from argparse import Namespace
 from array import array
-from ctypes import CDLL
 from os import path
-
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QImage
+import io
+from PIL import Image
 
 import lib_col_pic
 
@@ -28,7 +27,7 @@ class ElegooNeptuneThumbnails:
         args: Namespace = self._parse_args()
         self._gcode: str = args.gcode
         self._printer_model: str = args.printer
-        self._thumbnail: QImage = self._get_q_image_thumbnail()
+        self._thumbnail: Image.Image = self._get_image_thumbnail()
 
         # Find printer model from gcode if not set
         if not self._printer_model or self._printer_model not in (self.OLD_MODELS + self.NEW_MODELS):
@@ -57,7 +56,7 @@ class ElegooNeptuneThumbnails:
         base64_thumbnail: str = ""
         with open(self._gcode, "r", encoding="utf8") as file:
             for line in file.read().splitlines():
-                if not found and line.startswith("; thumbnail begin 600x600"):
+                if not found and line.startswith("; thumbnail begin"):
                     found = True
                 elif found and line == "; thumbnail end":
                     return base64_thumbnail
@@ -66,18 +65,18 @@ class ElegooNeptuneThumbnails:
 
         # If not found, raise exception
         raise Exception(
-            "Correct size thumbnail is not present: Make sure, that your slicer generates a thumbnail with size 600x600")
+            "Correct size thumbnail is not present: Make sure, that your slicer generates a thumbnail")
 
-    def _get_q_image_thumbnail(self) -> QImage:
+    def _get_image_thumbnail(self) -> Image.Image:
         """
-        Read the base64 encoded thumbnail from gcode file and parse it to a QImage object
+        Read the base64 encoded thumbnail from gcode file and parse it to a Image.Image object
         """
         # Read thumbnail
         base64_thumbnail: str = self._get_base64_thumbnail()
 
-        # Parse thumbnail
-        thumbnail = QImage()
-        thumbnail.loadFromData(base64.decodebytes(bytes(base64_thumbnail, "UTF-8")), "PNG")
+        bytes_io = io.BytesIO(base64.decodebytes(bytes(base64_thumbnail, "UTF-8")))
+        thumbnail = Image.open(bytes_io)
+
         return thumbnail
 
     def _get_printer_model(self) -> str:
@@ -149,23 +148,23 @@ class ElegooNeptuneThumbnails:
                 file.write(gcode_prefix + g_code)
 
     @classmethod
-    def _parse_thumbnail_old(cls, img: QImage, width: int, height: int, img_type: str) -> str:
+    def _parse_thumbnail_old(cls, img: Image.Image, width: int, height: int, img_type: str) -> str:
         """
         Parse thumbnail to string for old printers
         TODO: Maybe optimize at some time
         """
         img_type = f";{img_type}:"
         result = ""
-        b_image = img.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio)
-        img_size = b_image.size()
+        b_image = img.resize((width, height)) # img.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio)
+        img_size = b_image.size
         result += img_type
         datasize = 0
-        for i in range(img_size.height()):
-            for j in range(img_size.width()):
-                pixel_color = b_image.pixelColor(j, i)
-                r = pixel_color.red() >> 3
-                g = pixel_color.green() >> 2
-                b = pixel_color.blue() >> 3
+        for i in range(img_size[1]):
+            for j in range(img_size[0]):
+                pixel_color = b_image.getpixel((j, i))
+                r = pixel_color[0] >> 3
+                g = pixel_color[1] >> 2
+                b = pixel_color[2] >> 3
                 rgb = (r << 11) | (g << 5) | b
                 str_hex = "%x" % rgb
                 if len(str_hex) == 3:
@@ -184,12 +183,12 @@ class ElegooNeptuneThumbnails:
                     datasize = 0
             # if i != img_size.height() - 1:
             result += '\rM10086 ;'
-            if i == img_size.height() - 1:
+            if i == img_size[1] - 1:
                 result += "\r"
         return result
 
     @classmethod
-    def _parse_thumbnail_new(cls, img: QImage, width: int, height: int, img_type: str) -> str:
+    def _parse_thumbnail_new(cls, img: Image.Image, width: int, height: int, img_type: str) -> str:
         """
         Parse thumbnail to string for new printers
         TODO: Maybe optimize at some time
@@ -197,21 +196,21 @@ class ElegooNeptuneThumbnails:
         img_type = f";{img_type}:"
 
         result = ""
-        b_image = img.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio)
-        img_size = b_image.size()
+        b_image = img.resize((width, height))
+        img_size = b_image.size
         color16 = array('H')
         try:
-            for i in range(img_size.height()):
-                for j in range(img_size.width()):
-                    pixel_color = b_image.pixelColor(j, i)
-                    r = pixel_color.red() >> 3
-                    g = pixel_color.green() >> 2
-                    b = pixel_color.blue() >> 3
+            for i in range(img_size[1]):
+                for j in range(img_size[0]):
+                    pixel_color = b_image.getpixel((j, i))
+                    r = pixel_color[0] >> 3
+                    g = pixel_color[1] >> 2
+                    b = pixel_color[2] >> 3
                     rgb = (r << 11) | (g << 5) | b
                     color16.append(rgb)
-            output_data = bytearray(img_size.height() * img_size.width() * 10)
-            result_int = lib_col_pic.ColPic_EncodeStr(color16, img_size.height(), img_size.width(), output_data,
-                                                      img_size.height() * img_size.width() * 10, 1024)
+            output_data = bytearray(img_size[1] * img_size[0] * 10)
+            result_int = lib_col_pic.ColPic_EncodeStr(color16, img_size[1], img_size[0], output_data,
+                                                      img_size[1] * img_size[0] * 10, 1024)
 
             data0 = str(output_data).replace('\\x00', '')
             data1 = data0[2:len(data0) - 2]

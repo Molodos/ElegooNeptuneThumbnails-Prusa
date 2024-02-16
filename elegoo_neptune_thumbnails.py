@@ -151,8 +151,9 @@ class ElegooNeptuneThumbnails:
         with open(self._gcode, "r", encoding="utf8") as file:
             g_code: str = file.read()
 
-        # Remove mark of PrusaSlicer
+        # Censor original slicer
         g_code = g_code.replace("PrusaSlicer", "CensoredSlicer")
+        g_code = g_code.replace("OrcaSlicer", "CensoredSlicer")
 
         # Add prefix
         if ';gimage:' not in g_code and ';simage:' not in g_code:

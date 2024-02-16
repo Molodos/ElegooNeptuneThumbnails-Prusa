@@ -15,8 +15,8 @@ If you like this post processing script, consider supporting me :)
 > features,
 > use Cura :)
 
-PrusaSlicer post-processing script for adding gcode thumbnail images for Elegoo Neptune printers. The following models
-are supported (for other models, see [FAQ](#faq)):
+PrusaSlicer/OrcaSlicer post-processing script for adding gcode thumbnail images for Elegoo Neptune printers. The
+following models are supported (for other models, see [FAQ](#faq)):
 
 - Elegoo Neptune 4
 - Elegoo Neptune 4 Pro
@@ -34,6 +34,10 @@ are supported (for other models, see [FAQ](#faq)):
 > **Note:** If you have some idea on how to improve the post processing script or found a bug, feel free to create
 > a [GitHub issue](https://github.com/Molodos/ElegooNeptuneThumbnails-Prusa/issues/new/choose) for that
 
+The plugin will generate thumbnails for Klipper (32x32 and 300x300) and your printer display including some print
+metadata. For further metadata customization, please use
+the [Cura plugin version](https://github.com/Molodos/ElegooNeptuneThumbnails) of the script
+
 <p float="left">
    <img src="readme_images/neptune_4_preview.jpg" width="300">
    <img src="readme_images/neptune_4_view.jpg" width="300">
@@ -46,10 +50,10 @@ are supported (for other models, see [FAQ](#faq)):
    operating system, you have to compile the script yourself as described in [Packaging Guide](#packaging-guide)
 2) Place the binary somewhere on your system and remember the path (
    e.g. `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe`)
-3) Set the thumbnail generation in PrusaSlicer to at least 300x300 (600x600 is optimal)
+3) Set the thumbnail generation in PrusaSlicer7OrcaSlicer to at least 300x300 (600x600 is optimal)
    PNG <img src="readme_images/prusaslicer_set_thumbnail.png" width="600">
 4) Configure the path to the post-processing script binary in
-   PrusaSlicer <img src="readme_images/prusaslicer_add_script.png" width="600">
+   PrusaSlicer/ORcaSlicer <img src="readme_images/prusaslicer_add_script.png" width="600">
 5) If it isn't working, check the [FAQ](#faq)
 
 ## FAQ
@@ -57,7 +61,7 @@ are supported (for other models, see [FAQ](#faq)):
 ### Is there a Cura version of this plugin?
 
 Yes, check out the [ElegooNeptuneThumbnails plugin for Cura 5.X](https://github.com/Molodos/ElegooNeptuneThumbnails),
-which is the extended version of this pos processing script.
+which is the extended version of this post processing script.
 
 ### I did not use the official Neptune printer preset in PrusaSlicer or OrcaSlicer, what to do?
 
@@ -83,14 +87,18 @@ There seems to be a bug in older printer firmware versions which causes the thum
 right after the last one ended. Restarting the printer in between prints seems to fix that. If this is the case for you,
 check your printer for firmware updates, which might fix the bug.
 
-### Why do I get errors and the thumbnail does not work on MacOS using an M-Series chip?
-
-Unfortunately I am dependent of the official Elegoo Cura binaries and as there are no binaries for the MacOS M series
-chips, I am not able to provide support for those.
-
 ### Is OrcaSlicer supported?
 
 Yes!
+
+### How to change the displayed metadata?
+
+It is currently not possible. If you really need to, please consider using
+the [Cura plugin version](https://github.com/Molodos/ElegooNeptuneThumbnails) of this script.
+
+### Why does the model height show "N/A" when using PrusaSlicer?
+
+PrusaSlicer unfortunately does not add the model height to the gcode. Therefore the script cannot display it. 
 
 ## Packaging Guide
 
@@ -113,7 +121,7 @@ Then, follow the steps for other systems.
 1) Install requirements `pip install -r requirements.txt`
 2) Create binary for your system:
    ```shell
-   pyinstaller --onefile --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
+   pyinstaller --onefile --add-data="img/*;img/" --name="ElegooNeptuneThumbnails-Prusa" elegoo_neptune_thumbnails.py
    ```
 3) Binary is in `dist` folder
 

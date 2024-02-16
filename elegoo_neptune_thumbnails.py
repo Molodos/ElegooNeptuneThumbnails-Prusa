@@ -3,11 +3,15 @@
 
 import argparse
 import base64
+import math
+import sys
 from argparse import Namespace
 from array import array
+from os import path
 
 from PyQt6.QtCore import Qt, QByteArray, QBuffer, QIODeviceBase
-from PyQt6.QtGui import QImage
+from PyQt6.QtGui import QImage, QPainter, QFont, QColor
+from PyQt6.QtWidgets import QApplication
 
 import lib_col_pic
 
@@ -17,10 +21,10 @@ class SliceData:
     Result data from slicing
     """
 
-    def __init__(self, time: str, printer_model: str,  model_height: float, filament_grams: float, filament_cost: float,
-                 currency: str = "€"):
+    def __init__(self, time_seconds: int, printer_model: str, model_height: float, filament_grams: float,
+                 filament_cost: float, currency: str = "€"):
         self.printer_model: str = printer_model
-        self.time: str = time
+        self.time_seconds: int = time_seconds
         self.model_height: float = model_height
         self.filament_grams: float = filament_grams
         self.filament_cost: float = filament_cost
@@ -31,6 +35,20 @@ class ElegooNeptuneThumbnails:
     """
     ElegooNeptuneThumbnails post processing script
     """
+
+    KLIPPER_THUMBNAIL_BLOCK_SIZE: int = 78
+    COLORS: dict[str, QColor] = {
+        "green": QColor(34, 236, 128),
+        "red": QColor(209, 76, 81),
+        "yellow": QColor(251, 226, 0),
+        "white": QColor(255, 255, 255),
+        "bg_dark": QColor(30, 36, 52),
+        "bg_light": QColor(46, 54, 75),
+        "bg_thumbnail": QColor(48, 57, 79),
+        "own_gray": QColor(200, 200, 200),
+        "darker_gray": QColor(63, 63, 63)
+    }
+    BG_PATH: str = path.abspath(path.join(path.dirname(path.realpath(__file__)), "img"))
 
     OLD_MODELS_ORCA: list[str] = ["Elegoo Neptune 2", "Elegoo Neptune 2D", "Elegoo Neptune 2S", "Elegoo Neptune X"]
     OLD_MODELS: list[str] = ["NEPTUNE2", "NEPTUNE2D", "NEPTUNE2S", "NEPTUNEX"] + OLD_MODELS_ORCA
@@ -48,14 +66,14 @@ class ElegooNeptuneThumbnails:
         self._thumbnail: QImage = self._get_q_image_thumbnail()
 
         # Get slice data
-        slice_data: SliceData = self._get_slice_data()
+        self._slice_data: SliceData = self._get_slice_data()
 
         # Find printer model from gcode if not set
         if not self._printer_model or self._printer_model not in (
                 self.OLD_MODELS + self.NEW_MODELS + self.B64JPG_MODELS):
-            if slice_data.printer_model is None:
+            if self._slice_data.printer_model is None:
                 Exception("Printer model not found")
-            self._printer_model = slice_data.printer_model
+            self._printer_model = self._slice_data.printer_model
 
     @classmethod
     def _parse_args(cls) -> Namespace:
@@ -113,11 +131,11 @@ class ElegooNeptuneThumbnails:
         """
         # Mapping of data to extract
         attribute_mapping: dict[str, str] = {
-            "max_z_height": "model_height",
-            "filament used [g]": "filament_grams",
-            "total filament cost": "filament_cost",
-            "estimated printing time (normal mode)": "time",
-            "printer_model": "printer_model"
+            "max_z_height: ": "model_height",
+            "filament used [g] = ": "filament_grams",
+            "total filament cost = ": "filament_cost",
+            "estimated printing time (normal mode) = ": "time",
+            "printer_model = ": "printer_model"
         }
 
         # Example
@@ -131,18 +149,35 @@ class ElegooNeptuneThumbnails:
         attributes: dict[str, str] = {}
 
         # Try to find all attributes
-        with open(self._gcode, "r", encoding="utf8") as file:
+        with open(self._gcode, "r", encoding="utf8") as file:  # TODO: Optimize search
             for line in file.read().splitlines():
                 if line.startswith("; "):
                     for attribute in list(attribute_mapping.keys()):
-                        prefix = f"; {attribute} = "
+                        prefix = f"; {attribute}"
                         if line.startswith(prefix):
                             attributes[attribute_mapping[attribute]] = line[len(prefix):]
                             del attribute_mapping[attribute]
 
         # Parse extracted data
+        time: str = attributes.get("time", None)
+        time_seconds: int = -1
+        if time is not None:
+            time_seconds = 0
+            for part in time.split(" "):
+                if part.endswith("s"):
+                    time_seconds += int(part[:-1])
+                elif part.endswith("m"):
+                    time_seconds += int(part[:-1]) * 60
+                elif part.endswith("h"):
+                    time_seconds += int(part[:-1]) * 60 * 60
+                elif part.endswith("d"):
+                    time_seconds += int(part[:-1]) * 60 * 60 * 24
+                elif part.endswith("w"):
+                    time_seconds += int(part[:-1]) * 60 * 60 * 24 * 7
+
+        # Return data
         return SliceData(
-            time=attributes.get("time", "N/A"),
+            time_seconds=time_seconds,
             printer_model=attributes.get("printer_model", None),
             model_height=float(attributes.get("model_height", "-1")),
             filament_grams=float(attributes.get("filament_grams", "-1")),
@@ -173,21 +208,100 @@ class ElegooNeptuneThumbnails:
         """
         return self._printer_model in self.B64JPG_MODELS
 
+    def _add_thumbnail_metadata(self, is_light_background: bool = False, bg_image_path: str = None) -> QImage:
+        """
+        Add metadata and background to thumbnail and return
+        """
+        # Prepare background
+        background: QImage = QImage(900, 900, QImage.Format.Format_RGBA8888)
+        if bg_image_path is not None:
+            painter = QPainter(background)
+            painter.drawImage(0, 0, QImage(bg_image_path))
+            painter.end()
+
+        # Paint foreground on background
+        painter = QPainter(background)
+        painter.drawImage(150, 160, self._thumbnail)
+        painter.end()
+
+        # Generate option lines
+        lines: list[str] = []
+
+        # Add print time
+        if self._slice_data.time_seconds < 0:
+            lines.append(f"⧖ N/A")
+        else:
+            time_minutes: int = math.floor(self._slice_data.time_seconds / 60)
+            lines.append(f"⧖ {time_minutes // 60}:{time_minutes % 60:02d}h")
+
+        # Add model height
+        if self._slice_data.model_height < 0:
+            lines.append(f"⭱ N/A")
+        else:
+            lines.append(f"⭱ {round(self._slice_data.model_height, 2)}mm")
+
+        # Add filament grams
+        if self._slice_data.filament_grams < 0:
+            lines.append(f"⭗ N/A")
+        else:
+            lines.append(f"⭗ {round(self._slice_data.filament_grams)}g")
+
+        # Add filament cost
+        if self._slice_data.filament_cost < 0:
+            lines.append(f"⛁ N/A")
+        else:
+            lines.append(f"⛁ {round(self._slice_data.filament_cost, 2):.02f}{self._slice_data.currency}")
+
+        # Add options
+        app = QApplication(sys.argv)  # Trick to make QT not crash on painter.drawText (it needs a QApplication)
+        painter = QPainter(background)
+        font = QFont("Arial", 60)
+        painter.setFont(font)
+        if is_light_background:
+            painter.setPen(self.COLORS["darker_gray"])
+        else:
+            painter.setPen(self.COLORS["own_gray"])
+        for i, line in enumerate(lines):
+            if line:
+                left: bool = i % 2 == 0
+                top: bool = i < 2
+                painter.drawText(30 if left else 470,
+                                 20 if top else 790, 400, 100,
+                                 (Qt.AlignmentFlag.AlignLeft if left else Qt.AlignmentFlag.AlignRight) +
+                                 Qt.AlignmentFlag.AlignVCenter, line)
+        painter.end()
+
+        # Return thumbnail
+        return background
+
     def _generate_gcode_prefix(self) -> str:
         """
         Generate a g-code prefix string
         """
+        # Generate metadata thumbnail
+        metadata_thumbnail: QImage = self._add_thumbnail_metadata(bg_image_path=None)
+
         # Parse to g-code prefix
         gcode_prefix: str = ""
         if self._is_old_thumbnail():
-            gcode_prefix += self._parse_thumbnail_old(self._thumbnail, 100, 100, "simage")
-            gcode_prefix += self._parse_thumbnail_old(self._thumbnail, 200, 200, ";gimage")
+            metadata_thumbnail_background: QImage = self._add_thumbnail_metadata(
+                bg_image_path=path.join(self.BG_PATH, "bg_old.png"))
+            gcode_prefix += self._parse_thumbnail_old(metadata_thumbnail_background, 100, 100, "simage")
+            gcode_prefix += self._parse_thumbnail_old(metadata_thumbnail_background, 200, 200, ";gimage")
+            gcode_prefix += self._parse_thumbnails_klipper(self._thumbnail, metadata_thumbnail)
         elif self._is_new_thumbnail():
-            gcode_prefix += self._parse_thumbnail_new(self._thumbnail, 200, 200, "gimage")
-            gcode_prefix += self._parse_thumbnail_new(self._thumbnail, 160, 160, "simage")
+            metadata_thumbnail_background: QImage = self._add_thumbnail_metadata(
+                bg_image_path=path.join(self.BG_PATH, "bg_new.png"))
+            gcode_prefix += self._parse_thumbnail_new(metadata_thumbnail_background, 200, 200, "gimage")
+            gcode_prefix += self._parse_thumbnail_new(metadata_thumbnail_background, 160, 160, "simage")
+            gcode_prefix += self._parse_thumbnails_klipper(self._thumbnail, metadata_thumbnail)
         elif self._is_b64jpg_thumbnail():
-            gcode_prefix += self._parse_thumbnail_b64jpg(self._thumbnail, 400, 400, "gimage")
-            gcode_prefix += self._parse_thumbnail_b64jpg(self._thumbnail, 114, 114, "simage")
+            metadata_thumbnail_background: QImage = self._add_thumbnail_metadata(is_light_background=True,
+                                                                                 bg_image_path=path.join(self.BG_PATH,
+                                                                                                         "bg_orangestorm.png"))
+            gcode_prefix += self._parse_thumbnail_b64jpg(metadata_thumbnail_background, 400, 400, "gimage")
+            gcode_prefix += self._parse_thumbnail_b64jpg(metadata_thumbnail_background, 114, 114, "simage")
+            gcode_prefix += self._parse_thumbnails_klipper(self._thumbnail, metadata_thumbnail)
         if gcode_prefix:
             gcode_prefix += '\r; Thumbnail generated by the ElegooNeptuneThumbnails-Prusa post processing script (https://github.com/Molodos/ElegooNeptuneThumbnails-Prusa)' \
                             '\r; Just mentioning "Cura_SteamEngine X.X" to trick printer into thinking this is Cura gcode\r\r'
@@ -208,11 +322,33 @@ class ElegooNeptuneThumbnails:
         g_code = g_code.replace("PrusaSlicer", "CensoredSlicer")
         g_code = g_code.replace("OrcaSlicer", "CensoredSlicer")
 
+        # Disable original thumbnail
+        g_code = g_code.replace("; thumbnail begin ", "; orig_thumbnail begin ")
+
         # Add prefix
         if ';gimage:' not in g_code and ';simage:' not in g_code:
             gcode_prefix: str = self._generate_gcode_prefix()
             with open(self._gcode, "w", encoding="utf8") as file:
                 file.write(gcode_prefix + g_code)
+
+    @classmethod
+    def _parse_thumbnails_klipper(cls, small_icon: QImage, big_icon: QImage) -> str:
+        """
+        Generate klipper thumbnail gcode for thumbnails in sizes 32x32 and 300x300
+        """
+        g_code: str = "\r"
+        for icon in [small_icon.scaled(32, 32), big_icon.scaled(300, 300)]:
+            byte_array: QByteArray = QByteArray()
+            byte_buffer: QBuffer = QBuffer(byte_array)
+            byte_buffer.open(QIODeviceBase.OpenModeFlag.WriteOnly)
+            icon.save(byte_buffer, "PNG")
+            base64_string: str = str(byte_array.toBase64().data(), "UTF-8")
+            g_code += f"; thumbnail begin {icon.width()} {icon.height()} {len(base64_string)}\r"
+            while base64_string:
+                g_code += f"; {base64_string[0:cls.KLIPPER_THUMBNAIL_BLOCK_SIZE]}\r"
+                base64_string = base64_string[cls.KLIPPER_THUMBNAIL_BLOCK_SIZE:]
+            g_code += "; thumbnail end\r\r"
+        return g_code
 
     @classmethod
     def _parse_thumbnail_old(cls, img: QImage, width: int, height: int, img_type: str) -> str:

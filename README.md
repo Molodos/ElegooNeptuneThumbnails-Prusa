@@ -59,7 +59,7 @@ are supported (for other models, see [FAQ](#faq)):
 Yes, check out the [ElegooNeptuneThumbnails plugin for Cura 5.X](https://github.com/Molodos/ElegooNeptuneThumbnails),
 which is the extended version of this pos processing script.
 
-### I did not use the official Neptune printer preset in PrusaSliceer, what to do?
+### I did not use the official Neptune printer preset in PrusaSlicer or OrcaSlicer, what to do?
 
 The script cannot auto-detect your printer when doing so. To manually set the printer model, use the
 parameter `--printer=<printer_model>` after the path of the processing script in the PrusaSlicer settings. It should
@@ -87,6 +87,10 @@ check your printer for firmware updates, which might fix the bug.
 
 Unfortunately I am dependent of the official Elegoo Cura binaries and as there are no binaries for the MacOS M series
 chips, I am not able to provide support for those.
+
+### Is OrcaSlicer supported?
+
+Yes!
 
 ## Packaging Guide
 

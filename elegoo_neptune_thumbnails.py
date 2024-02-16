@@ -12,14 +12,33 @@ from PyQt6.QtGui import QImage
 import lib_col_pic
 
 
+class SliceData:
+    """
+    Result data from slicing
+    """
+
+    def __init__(self, time: str, printer_model: str,  model_height: float, filament_grams: float, filament_cost: float,
+                 currency: str = "€"):
+        self.printer_model: str = printer_model
+        self.time: str = time
+        self.model_height: float = model_height
+        self.filament_grams: float = filament_grams
+        self.filament_cost: float = filament_cost
+        self.currency: str = currency
+
+
 class ElegooNeptuneThumbnails:
     """
     ElegooNeptuneThumbnails post processing script
     """
 
-    OLD_MODELS: list[str] = ["NEPTUNE2", "NEPTUNE2D", "NEPTUNE2S", "NEPTUNEX"]
+    OLD_MODELS_ORCA: list[str] = ["Elegoo Neptune 2", "Elegoo Neptune 2D", "Elegoo Neptune 2S", "Elegoo Neptune X"]
+    OLD_MODELS: list[str] = ["NEPTUNE2", "NEPTUNE2D", "NEPTUNE2S", "NEPTUNEX"] + OLD_MODELS_ORCA
+    NEW_MODELS_ORCA: list[str] = ["Elegoo Neptune 4", "Elegoo Neptune 4 Pro", "Elegoo Neptune 4 Plus",
+                                  "Elegoo Neptune 4 Max", "Elegoo Neptune 3 Pro", "Elegoo Neptune 3 Plus",
+                                  "Elegoo Neptune 3 Max"]
     NEW_MODELS: list[str] = ["NEPTUNE4", "NEPTUNE4PRO", "NEPTUNE4PLUS", "NEPTUNE4MAX",
-                             "NEPTUNE3PRO", "NEPTUNE3PLUS", "NEPTUNE3MAX"]
+                             "NEPTUNE3PRO", "NEPTUNE3PLUS", "NEPTUNE3MAX"] + NEW_MODELS_ORCA
     B64JPG_MODELS: list[str] = ["ORANGESTORMGIGA"]
 
     def __init__(self):
@@ -28,10 +47,15 @@ class ElegooNeptuneThumbnails:
         self._printer_model: str = args.printer
         self._thumbnail: QImage = self._get_q_image_thumbnail()
 
+        # Get slice data
+        slice_data: SliceData = self._get_slice_data()
+
         # Find printer model from gcode if not set
         if not self._printer_model or self._printer_model not in (
                 self.OLD_MODELS + self.NEW_MODELS + self.B64JPG_MODELS):
-            self._printer_model = self._get_printer_model()
+            if slice_data.printer_model is None:
+                Exception("Printer model not found")
+            self._printer_model = slice_data.printer_model
 
     @classmethod
     def _parse_args(cls) -> Namespace:
@@ -83,18 +107,47 @@ class ElegooNeptuneThumbnails:
         thumbnail = thumbnail.scaled(600, 600, Qt.AspectRatioMode.KeepAspectRatio)
         return thumbnail
 
-    def _get_printer_model(self) -> str:
+    def _get_slice_data(self) -> SliceData:
         """
-        Read the printer model from gcode file
+        Read slice data from gcode file
         """
-        # Try to find printer model
+        # Mapping of data to extract
+        attribute_mapping: dict[str, str] = {
+            "max_z_height": "model_height",
+            "filament used [g]": "filament_grams",
+            "total filament cost": "filament_cost",
+            "estimated printing time (normal mode)": "time",
+            "printer_model": "printer_model"
+        }
+
+        # Example
+        # "; max_z_height: 1.40"
+        # "; filament used [g] = 12.94"
+        # "; total filament cost = 0.26"
+        # "; estimated printing time (normal mode) = 32m 11s"
+        # "; printer_model = Elegoo Neptune 4 Pro"
+
+        # Dict to store extracted data
+        attributes: dict[str, str] = {}
+
+        # Try to find all attributes
         with open(self._gcode, "r", encoding="utf8") as file:
             for line in file.read().splitlines():
-                if line.startswith("; printer_model = "):
-                    return line[len("; printer_model = "):]
+                if line.startswith("; "):
+                    for attribute in list(attribute_mapping.keys()):
+                        prefix = f"; {attribute} = "
+                        if line.startswith(prefix):
+                            attributes[attribute_mapping[attribute]] = line[len(prefix):]
+                            del attribute_mapping[attribute]
 
-        # If not found, raise exception
-        raise Exception("Printer model not found")
+        # Parse extracted data
+        return SliceData(
+            time=attributes.get("time", "N/A"),
+            printer_model=attributes.get("printer_model", None),
+            model_height=float(attributes.get("model_height", "-1")),
+            filament_grams=float(attributes.get("filament_grams", "-1")),
+            filament_cost=float(attributes.get("filament_cost", "-1"))
+        )
 
     def is_supported_printer(self) -> bool:
         """

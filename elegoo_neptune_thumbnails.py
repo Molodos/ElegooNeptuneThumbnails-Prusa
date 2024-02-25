@@ -99,8 +99,11 @@ class ElegooNeptuneThumbnails:
         with open(self._gcode, "r", encoding="utf8") as file:
             for line in file.read().splitlines():
                 if not found and line.startswith("; thumbnail begin "):
-                    parts = line.split(" ")
-                    width, height = map(int, parts[3].split("x"))
+                    parts: list[str] = line.split(" ")
+                    parts_two: list[str] = []
+                    for part in [p.split("x") for p in parts]:
+                        parts_two += part
+                    width, height = map(int, parts_two[3:5])
                     if width >= min_size and height >= min_size:
                         found = True
                 elif found and line == "; thumbnail end":

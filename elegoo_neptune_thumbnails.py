@@ -177,6 +177,12 @@ class ElegooNeptuneThumbnails:
                     time_seconds += int(part[:-1]) * 60 * 60 * 24
                 elif part.endswith("w"):
                     time_seconds += int(part[:-1]) * 60 * 60 * 24 * 7
+        filament_grams: str = attributes.get("filament_grams", None)
+        if filament_grams is not None:
+            total: float = 0
+            for entry in filament_grams.split(","):
+                total += float(entry.strip())
+            attributes["filament_grams"] = str(total)
 
         # Return data
         return SliceData(

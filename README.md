@@ -50,7 +50,7 @@ the [Cura plugin version](https://github.com/Molodos/ElegooNeptuneThumbnails) of
    operating system, you have to compile the script yourself as described in [Packaging Guide](#packaging-guide)
 2) Place the binary somewhere on your system and remember the path (
    e.g. `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe`)
-3) Set the thumbnail generation in PrusaSlicer7OrcaSlicer to at least 300x300 (600x600 is optimal)
+3) Set the thumbnail generation in PrusaSlicer/OrcaSlicer to at least 300x300 (600x600 is optimal)
    PNG <img src="readme_images/prusaslicer_set_thumbnail.png" width="600">
 4) Configure the path to the post-processing script binary in
    PrusaSlicer/ORcaSlicer <img src="readme_images/prusaslicer_add_script.png" width="600">
@@ -63,11 +63,12 @@ the [Cura plugin version](https://github.com/Molodos/ElegooNeptuneThumbnails) of
 Yes, check out the [ElegooNeptuneThumbnails plugin for Cura 5.X](https://github.com/Molodos/ElegooNeptuneThumbnails),
 which is the extended version of this post processing script.
 
-### I did not use the official Neptune printer preset in PrusaSlicer or OrcaSlicer, what to do?
+### I did not use the official Neptune printer preset in PrusaSlicer or OrcaSlicer or want another currency, what to do?
 
 The script cannot auto-detect your printer when doing so. To manually set the printer model, use the
 parameter `--printer=<printer_model>` after the path of the processing script in the PrusaSlicer settings. It should
-look like `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe --printer=NEPTUNE4PRO`. Allowed values are the following:
+look like `C:\Users\Michael\ElegooNeptuneThumbnails-Prusa.exe --printer=NEPTUNE4PRO --currency=€`. Allowed values for
+printer are the following:
 
 NEPTUNE4, NEPTUNE4PRO, NEPTUNE4PLUS, NEPTUNE4MAX, NEPTUNE3PRO, NEPTUNE3PLUS, NEPTUNE3MAX, NEPTUNE2, NEPTUNE2S,
 NEPTUNE2D, NEPTUNEX and ORANGESTORMGIGA
@@ -98,7 +99,7 @@ the [Cura plugin version](https://github.com/Molodos/ElegooNeptuneThumbnails) of
 
 ### Why does the model height show "N/A" when using PrusaSlicer?
 
-PrusaSlicer unfortunately does not add the model height to the gcode. Therefore the script cannot display it. 
+PrusaSlicer unfortunately does not add the model height to the gcode. Therefore the script cannot display it.
 
 ## Packaging Guide
 

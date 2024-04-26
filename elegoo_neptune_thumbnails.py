@@ -22,13 +22,13 @@ class SliceData:
     """
 
     def __init__(self, time_seconds: int, printer_model: str, model_height: float, filament_grams: float,
-                 filament_cost: float, currency: str = "€"):
+                 filament_cost: float, currency: str = None):
         self.printer_model: str = printer_model
         self.time_seconds: int = time_seconds
         self.model_height: float = model_height
         self.filament_grams: float = filament_grams
         self.filament_cost: float = filament_cost
-        self.currency: str = currency
+        self.currency: str = currency if currency else "€"
 
 
 class ElegooNeptuneThumbnails:
@@ -63,6 +63,7 @@ class ElegooNeptuneThumbnails:
         args: Namespace = self._parse_args()
         self._gcode: str = args.gcode
         self._printer_model: str = args.printer
+        self._currency: str = args.currency
         self._thumbnail: QImage = self._get_q_image_thumbnail()
 
         # Get slice data
@@ -86,7 +87,9 @@ class ElegooNeptuneThumbnails:
             description="A post processing script to add Elegoo Neptune thumbnails to gcode")
         parser.add_argument("-p", "--printer", help="Printer model to generate for", type=str, required=False,
                             default="")
-        parser.add_argument("gcode", help="Gcode path provided by PrusaSlicer", type=str)
+        parser.add_argument("-c", "--currency", help="The currency to user (default is Euro)", type=str, required=False,
+                            default="")
+        parser.add_argument("gcode", help="Gcode path provided by OrcaSlicer", type=str)
         return parser.parse_args()
 
     def _get_base64_thumbnail(self, min_size: int = 300) -> str:
@@ -190,7 +193,8 @@ class ElegooNeptuneThumbnails:
             printer_model=attributes.get("printer_model", None),
             model_height=float(attributes.get("model_height", "-1")),
             filament_grams=float(attributes.get("filament_grams", "-1")),
-            filament_cost=float(attributes.get("filament_cost", "-1"))
+            filament_cost=float(attributes.get("filament_cost", "-1")),
+            currency=self._currency
         )
 
     def is_supported_printer(self) -> bool:

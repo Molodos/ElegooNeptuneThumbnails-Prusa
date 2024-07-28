@@ -15,20 +15,7 @@ from PyQt6.QtWidgets import QApplication
 
 import lib_col_pic
 
-
-class SliceData:
-    """
-    Result data from slicing
-    """
-
-    def __init__(self, time_seconds: int, printer_model: str, model_height: float, filament_grams: float,
-                 filament_cost: float, currency: str = None):
-        self.printer_model: str = printer_model
-        self.time_seconds: int = time_seconds
-        self.model_height: float = model_height
-        self.filament_grams: float = filament_grams
-        self.filament_cost: float = filament_cost
-        self.currency: str = currency if currency else "€"
+from tools import SliceData, ThumbnailGenerator
 
 
 class ElegooNeptuneThumbnails:
@@ -64,6 +51,12 @@ class ElegooNeptuneThumbnails:
         self._gcode: str = args.gcode
         self._printer_model: str = args.printer
         self._currency: str = args.currency
+        self._corner_options = [
+            args.corner_top_left,
+            args.corner_top_right,
+            args.corner_bottom_left,
+            args.corner_bottom_right
+        ]
         self._thumbnail: QImage = self._get_q_image_thumbnail()
 
         # Get slice data
@@ -88,8 +81,12 @@ class ElegooNeptuneThumbnails:
         parser.add_argument("-p", "--printer", help="Printer model to generate for", type=str, required=False,
                             default="")
         parser.add_argument("-c", "--currency", help="The currency to user (default is Euro)", type=str, required=False,
-                            default="")
+                            default="€")
         parser.add_argument("gcode", help="Gcode path provided by OrcaSlicer", type=str)
+        parser.add_argument("--corner-top-left", choices=ThumbnailGenerator.available_options(), default="time_estimate")
+        parser.add_argument("--corner-top-right", choices=ThumbnailGenerator.available_options(), default="model_height")
+        parser.add_argument("--corner-bottom-left", choices=ThumbnailGenerator.available_options(), default="filament_grams_estimate")
+        parser.add_argument("--corner-bottom-right", choices=ThumbnailGenerator.available_options(), default="filament_cost_estimate")
         return parser.parse_args()
 
     def _get_base64_thumbnail(self, min_size: int = 300) -> str:
@@ -139,17 +136,23 @@ class ElegooNeptuneThumbnails:
         attribute_mapping: dict[str, str] = {
             "max_z_height: ": "model_height",
             "filament used [g] = ": "filament_grams",
+            "filament used [mm] = ": "filement_millimeters",
             "total filament cost = ": "filament_cost",
             "estimated printing time (normal mode) = ": "time",
-            "printer_model = ": "printer_model"
+            "printer_model = ": "printer_model",
+            "layer_height = ": "layer_height",
+            "line_width = ": "line_width",
         }
 
         # Example
         # "; max_z_height: 1.40"
         # "; filament used [g] = 12.94"
+        # "; filament used [mm] = 1404.84"
         # "; total filament cost = 0.26"
         # "; estimated printing time (normal mode) = 32m 11s"
         # "; printer_model = Elegoo Neptune 4 Pro"
+        # "; layer_height = 0.2"
+        # "; line_width = 0.4"
 
         # Dict to store extracted data
         attributes: dict[str, str] = {}
@@ -182,20 +185,34 @@ class ElegooNeptuneThumbnails:
                     time_seconds += int(part[:-1]) * 60 * 60 * 24 * 7
         filament_grams: str = attributes.get("filament_grams", None)
         if filament_grams is not None:
-            total: float = 0
-            for entry in filament_grams.split(","):
-                total += float(entry.strip())
-            attributes["filament_grams"] = str(total)
+            filament_grams: float = ElegooNeptuneThumbnails._make_total(filament_grams)
+        else:
+            filament_grams: float = -1.0
+
+        filement_millimeters: str = attributes.get("filement_millimeters", None)
+        if filement_millimeters is not None:
+            filament_meters = ElegooNeptuneThumbnails._make_total(filement_millimeters) / 1000.0
+        else:
+            filament_meters = -1.0
 
         # Return data
         return SliceData(
+            layer_height=float(attributes.get("layer_height", "-1")),
             time_seconds=time_seconds,
             printer_model=attributes.get("printer_model", None),
+            filament_meters=filament_meters,
+            filament_grams=filament_grams,
             model_height=float(attributes.get("model_height", "-1")),
-            filament_grams=float(attributes.get("filament_grams", "-1")),
             filament_cost=float(attributes.get("filament_cost", "-1")),
-            currency=self._currency
-        )
+            line_width=float(attributes.get("line_width", "-1")),
+            currency=self._currency)
+
+    @staticmethod
+    def _make_total(comma_separated_floats: str) -> float:
+        total: float = 0
+        for entry in comma_separated_floats.split(","):
+            total += float(entry.strip())
+        return total
 
     def is_supported_printer(self) -> bool:
         """
@@ -238,32 +255,9 @@ class ElegooNeptuneThumbnails:
         painter.end()
 
         # Generate option lines
-        lines: list[str] = []
-
-        # Add print time
-        if self._slice_data.time_seconds < 0:
-            lines.append(f"⧖ N/A")
-        else:
-            time_minutes: int = math.floor(self._slice_data.time_seconds / 60)
-            lines.append(f"⧖ {time_minutes // 60}:{time_minutes % 60:02d}h")
-
-        # Add model height
-        if self._slice_data.model_height < 0:
-            lines.append(f"⭱ N/A")
-        else:
-            lines.append(f"⭱ {round(self._slice_data.model_height, 2)}mm")
-
-        # Add filament grams
-        if self._slice_data.filament_grams < 0:
-            lines.append(f"⭗ N/A")
-        else:
-            lines.append(f"⭗ {round(self._slice_data.filament_grams)}g")
-
-        # Add filament cost
-        if self._slice_data.filament_cost < 0:
-            lines.append(f"⛁ N/A")
-        else:
-            lines.append(f"⛁ {round(self._slice_data.filament_cost, 2):.02f}{self._slice_data.currency}")
+        lines: list[str] = ThumbnailGenerator.generate_option_lines(
+            self._corner_options,
+            self._slice_data)
 
         # Add options
         app = QApplication(sys.argv)  # Trick to make QT not crash on painter.drawText (it needs a QApplication)

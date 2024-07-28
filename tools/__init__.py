@@ -1,0 +1,1 @@
+from .thumbnail_generator import SliceData, ThumbnailGenerator

@@ -94,8 +94,21 @@ Yes!
 
 ### How to change the displayed metadata?
 
-It is currently not possible. If you really need to, please consider using
-the [Cura plugin version](https://github.com/Molodos/ElegooNeptuneThumbnails) of this script.
+There exists a parameter for each corner which has a default value, but can be changed:
+* `--corner-top-left`: defaults to time estimate
+* `--corner-top-right`: defaults to model height
+* `--corner-bottom-left`: defaults to filament usage estimate in grams
+* `--corner-bottom-right`: defaults to filament cost estimate
+
+Each corner can be set to one of the following values:
+* `nothing`: does not display anything in the corner
+* `time_estimate`: displays the time estimate
+* `filament_grams_estimate`: displays the filament usage estimate in grams
+* `layer_height`: displays the layer height in millimeters
+* `model_height`: displays the model height in millimeters
+* `filament_cost_estimate`: displays the filament cost estimate
+* `filament_meters_estimate`: displays the filament usage estimate in meters
+* `line_width`: displays the line width in millimeters
 
 ### Why does the model height show "N/A" when using PrusaSlicer?
 

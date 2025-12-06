@@ -5,3 +5,6 @@ build/
 *.iml
 *.gcode
 *.spec
+__pycache__/lib_col_pic.cpython-313.pyc
+.vscode/launch.json
+neu 8.txt
